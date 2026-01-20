@@ -21,7 +21,7 @@
 
 addon.name      = 'config';
 addon.author    = 'atom0s';
-addon.version   = '1.3';
+addon.version   = '1.4';
 addon.desc      = 'Enables slash commands to force-set game settings directly.';
 addon.link      = 'https://ashitaxi.com/';
 
@@ -35,6 +35,7 @@ ffi.cdef[[
     typedef int32_t (__cdecl* get_config_value_t)(int32_t);
     typedef int32_t (__cdecl* set_config_value_t)(int32_t, int32_t);
     typedef int32_t (__fastcall* get_config_entry_t)(int32_t, int32_t, int32_t);
+    typedef int32_t (__cdecl* set_auto_offline_t)(int32_t);
 
     // Configuration Value Entry Definition
     typedef struct FsConfigSubject {
@@ -57,6 +58,7 @@ local config = T{
     set     = nil,
     this    = nil,
     info    = nil,
+    offline = nil,
 };
 
 --[[
@@ -95,6 +97,7 @@ ashita.events.register('load', 'load_cb', function ()
     config.get = ffi.cast('get_config_value_t', ptr);
     config.set = ffi.cast('set_config_value_t', ashita.memory.find(0, 0, '85C974??8B4424088B5424045052E8????????C383C8FFC3', -6, 0));
     config.info = ffi.cast('get_config_entry_t', ashita.memory.find(0, 0, '8B490485C974108B4424048D14808D04508D0481C2040033C0C20400', 0, 0));
+    config.offline = ffi.cast('set_auto_offline_t', ashita.memory.find(0, 0, '568B74240885F674??B889888888F7EE', 0, 0));
 
     -- Obtain the 'this' pointer for the configuration data..
     config.this = ffi.cast('uint32_t**', ptr + 2)[0][0];
@@ -104,6 +107,7 @@ ashita.events.register('load', 'load_cb', function ()
     assert(config.set ~= nil, chat.header('config'):append(chat.error('Error: Failed to locate required \'set\' function pointer.')));
     assert(config.info ~= nil, chat.header('config'):append(chat.error('Error: Failed to locate required \'info\' function pointer.')));
     assert(config.this ~= 0, chat.header('config'):append(chat.error('Error: Failed to locate required \'this\' object pointer.')));
+    assert(config.offline ~= 0, chat.header('config'):append(chat.error('Error: Failed to locate required \'SetAutoOffline\' function pointer.')));
 end);
 
 --[[
@@ -175,6 +179,15 @@ ashita.events.register('command', 'command_cb', function (e)
                                    :append(chat.success(id))
                                    :append(chat.message('\' to: '))
                                    :append(chat.success(tostring(val))));
+
+       -- Update the auto-offline timer..
+        if (id == 65) then
+            config.offline(val);
+            print(chat.header('config'):append(chat.message('Client auto-offline feature has been '))
+                                       :append(val == 0 and chat.success('disabled') or chat.success('enabled'))
+                                       :append(chat.message('.')));
+        end
+
         return;
     end
 
