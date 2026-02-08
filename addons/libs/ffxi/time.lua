@@ -37,7 +37,7 @@ ffi.cdef[[
         int32_t tm_wday;
         int32_t tm_yday;
         int32_t tm_isdst;
-    } tm_t;
+    } tm;
 
     typedef uint32_t    (__cdecl*   ntGameTimeDiff_f)(uint32_t);
     typedef uint32_t    (__stdcall* ntGameTimeGet_f)(void);
